@@ -5,29 +5,29 @@ items:
 - kind: Service
   apiVersion: v1
   metadata:
-    name: nginx-service
+    name: combined-nginx-service
     labels:
-      app: nginx
+      app: combined-nginx
   spec:
     type: LoadBalancer
     selector:
-      app: nginx
+      app: combined-nginx
     ports:
       - port: 80
         targetPort: 80
 - apiVersion: extensions/v1beta1
   kind: Deployment
   metadata:
-    name: nginx-deployment
+    name: combined-nginx-deployment
   spec:
     replicas: 1
     template:
       metadata:
         labels:
-          app: nginx
+          app: combined-nginx
       spec:
         containers:
-        - name: nginx-container
+        - name: combined-nginx-container
           image: nginx
           ports:
           - containerPort: 80
