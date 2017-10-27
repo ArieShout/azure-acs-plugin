@@ -6,53 +6,46 @@
 
 package com.microsoft.jenkins.acs.integration;
 
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
-import com.microsoft.jenkins.acs.commands.KubernetesDeploymentCommand;
-import com.microsoft.jenkins.acs.commands.KubernetesDeploymentCommandBase;
+import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.jenkins.acs.ACSDeploymentBuilder;
+import com.microsoft.jenkins.acs.ACSDeploymentContext;
 import com.microsoft.jenkins.acs.util.Constants;
-import com.microsoft.jenkins.azurecommons.JobContext;
-import com.microsoft.jenkins.azurecommons.command.CommandState;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
-import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.model.Job;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.Result;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import org.apache.commons.codec.Charsets;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryToken;
+import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.net.URL;
+import java.util.Collections;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.microsoft.jenkins.acs.integration.TestHelpers.generateRandomString;
 import static com.microsoft.jenkins.acs.integration.TestHelpers.loadFile;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class KubernetesDeploymentIT extends IntegrationTest {
     private static final Logger LOGGER = Logger.getLogger(KubernetesDeploymentIT.class.getName());
@@ -66,82 +59,95 @@ public class KubernetesDeploymentIT extends IntegrationTest {
     @ClassRule
     public static ACSRule acs = new ACSRule(ContainerServiceOchestratorTypes.KUBERNETES.toString());
 
-    @Rule
-    public TemporaryFolder tmpFolder = new TemporaryFolder();
+    private String azureCredentialsId;
+    private String sshCredentialsId;
+    private String dockerCredentialsId;
 
-    private FilePath workspace = null;
-    private KubernetesDeploymentCommandBase.IKubernetesDeploymentCommandData commandData;
-    private EnvVars envVars = new EnvVars();
+    private ACSDeploymentContext deploymentContext;
 
-    private String secretName = null;
+    private void setupJenkins() {
+        AzureCredentials azureCredentials = new AzureCredentials(
+                CredentialsScope.GLOBAL,
+                azureCredentialsId = UUID.randomUUID().toString(),
+                "Azure Credentials For ACS Test",
+                acs.subscriptionId,
+                acs.clientId,
+                acs.clientSecret,
+                acs.oauth2TokenEndpoint,
+                acs.serviceManagementURL,
+                acs.authenticationEndpoint,
+                acs.resourceManagerEndpoint,
+                acs.graphEndpoint);
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(azureCredentials);
+
+        BasicSSHUserPrivateKey sshCredentials = new BasicSSHUserPrivateKey(
+                CredentialsScope.GLOBAL,
+                sshCredentialsId = UUID.randomUUID().toString(),
+                acs.adminUser,
+                new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(acs.keyPair.privateKey),
+                null,
+                "Azure SSH Credentials For ACS Test");
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(sshCredentials);
+
+        if (StringUtils.isNotBlank(testEnv.dockerUsername)) {
+            UsernamePasswordCredentials userPass = new UsernamePasswordCredentialsImpl(
+                    CredentialsScope.GLOBAL,
+                    dockerCredentialsId = UUID.randomUUID().toString(),
+                    "Docker Registry Credentials For ACS Test",
+                    testEnv.dockerUsername,
+                    testEnv.dockerPassword);
+            SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(userPass);
+        }
+    }
 
     @Before
     @Override
     public void setup() throws Exception {
         super.setup();
 
-        workspace = new FilePath(tmpFolder.newFolder());
+        setupJenkins();
 
-        commandData = mock(KubernetesDeploymentCommandBase.IKubernetesDeploymentCommandData.class);
-
-        JobContext jobContext = mock(JobContext.class);
-        when(jobContext.getWorkspace()).thenReturn(workspace);
-        TaskListener taskListener = mock(TaskListener.class);
-        when(taskListener.getLogger()).thenReturn(System.err);
-        when(jobContext.getTaskListener()).thenReturn(taskListener);
-        Run run = mock(Run.class);
-        when(run.getDisplayName()).thenReturn(acs.resourceName + "-run");
-        when(run.getParent()).thenReturn(mock(Job.class));
-        when(jobContext.getRun()).thenReturn(run);
-        when(commandData.getJobContext()).thenReturn(jobContext);
-
-        when(commandData.getEnvVars()).thenReturn(envVars);
-        when(commandData.getMgmtFQDN()).thenReturn(acs.containerService.masterFqdn());
-        when(commandData.getContainerServiceType()).thenReturn(ContainerServiceOchestratorTypes.KUBERNETES.toString());
-        when(commandData.getSshCredentials()).thenReturn(acs.sshCredentials);
-        when(commandData.getSecretName()).thenReturn(secretName = "acs-test-" + generateRandomString(10));
-        when(commandData.getSecretNamespace()).thenReturn("default");
-        when(commandData.isEnableConfigSubstitution()).thenReturn(false);
-        when(commandData.getConfigFilePaths()).thenReturn("k8s/*.yml");
-        when(commandData.getOrchestratorType()).thenReturn(ContainerServiceOchestratorTypes.KUBERNETES);
-
-        when(commandData.resolvedDockerRegistryEndpoints(any(Job.class))).thenReturn(testEnv.dockerCredentials);
+        deploymentContext = new ACSDeploymentContext(
+                azureCredentialsId,
+                acs.resourceGroup,
+                acs.resourceName + "| Kubernetes",
+                sshCredentialsId,
+                "k8s/*.yml");
     }
 
-    @Test
     @Ignore
+    @Test
     public void combinedResourceDeployment() throws Exception {
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/combined-resource.yml");
 
-        new KubernetesDeploymentCommand().execute(commandData);
+        new ACSDeploymentBuilder(deploymentContext).perform(run, workspace, launcher, taskListener);
 
-        verify(commandData).setCommandState(CommandState.Success);
-        verify(commandData, never()).logError(any(Exception.class));
+        verify(run, never()).setResult(Result.FAILURE);
     }
 
-    @Test
     @Ignore
+    @Test
     public void separeteResourceDeployment() throws Exception {
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/separated-deployment.yml");
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/separated-service.yml");
 
-        new KubernetesDeploymentCommand().execute(commandData);
-        verify(commandData).setCommandState(CommandState.Success);
-        verify(commandData, never()).logError(any(Exception.class));
+        new ACSDeploymentBuilder(deploymentContext).perform(run, workspace, launcher, taskListener);
+
+        verify(run, never()).setResult(Result.FAILURE);
     }
 
-    @Test
     @Ignore
+    @Test
     public void testVariableSubstitute() throws Exception {
-        when(commandData.isEnableConfigSubstitution()).thenReturn(true);
+        loadFile(KubernetesDeploymentIT.class, workspace, "k8s/substitute.yml");
+
+        deploymentContext.setEnableConfigSubstitution(true);
         envVars.put("DEPLOYMENT_NAME", "substitute-vars-deployment");
         envVars.put("LABEL_APP", "substitute-nginx");
 
-        loadFile(KubernetesDeploymentIT.class, workspace, "k8s/substitute.yml");
+        new ACSDeploymentBuilder(deploymentContext).perform(run, workspace, launcher, taskListener);
 
-        new KubernetesDeploymentCommand().execute(commandData);
-        verify(commandData).setCommandState(CommandState.Success);
-        verify(commandData, never()).logError(any(Exception.class));
+        verify(run, never()).setResult(Result.FAILURE);
 
         KubernetesClient client = buildKubernetesClient();
         Deployment deployment = client.extensions().deployments().inNamespace("default").withName("substitute-vars-deployment").get();
@@ -165,13 +171,12 @@ public class KubernetesDeploymentIT extends IntegrationTest {
 
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/private-repository.yml");
 
-        DockerRegistryToken token = new DockerRegistryToken(testEnv.dockerUsername,
-                Base64.encodeBase64String((testEnv.dockerUsername + ":" + testEnv.dockerPassword).getBytes(Charsets.UTF_8)));
-        String registry = StringUtils.isBlank(testEnv.dockerRegistry) ? "https://index.docker.io/v1/" : testEnv.dockerRegistry;
-        testEnv.dockerCredentials.add(new ResolvedDockerRegistryEndpoint(new URL(registry), token));
-
-        when(commandData.isEnableConfigSubstitution()).thenReturn(true);
+        deploymentContext.setEnableConfigSubstitution(true);
         envVars.put("ACS_TEST_DOCKER_REPOSITORY", testEnv.dockerRepository);
+        envVars.put("IMAGE_NAME", "acs-test-private");
+
+        DockerRegistryEndpoint endpoint = new DockerRegistryEndpoint(testEnv.dockerRegistry, dockerCredentialsId);
+        deploymentContext.setContainerRegistryCredentials(Collections.singletonList(endpoint));
 
         KubernetesClient client = buildKubernetesClient();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -197,15 +202,14 @@ public class KubernetesDeploymentIT extends IntegrationTest {
                             }
                         });
 
-        new KubernetesDeploymentCommand().execute(commandData);
-        verify(commandData).setCommandState(CommandState.Success);
-        verify(commandData, never()).logError(any(Exception.class));
+        try {
+            new ACSDeploymentBuilder(deploymentContext).perform(run, workspace, launcher, taskListener);
 
-        if (!latch.await(5, TimeUnit.MINUTES)) {
-            deploymentWatch.close();
-            Assert.fail("Timeout while waiting for the deployment to become available");
-        } else {
-            // succeeded
+            verify(run, never()).setResult(Result.FAILURE);
+            if (!latch.await(5, TimeUnit.MINUTES)) {
+                Assert.fail("Timeout while waiting for the deployment to become available");
+            }
+        } finally {
             deploymentWatch.close();
         }
     }

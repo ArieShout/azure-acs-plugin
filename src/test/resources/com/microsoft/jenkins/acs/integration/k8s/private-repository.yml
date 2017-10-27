@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: private-repository-container
-        image: $ACS_TEST_DOCKER_REPOSITORY/acs-test-private
+        image: $ACS_TEST_DOCKER_REPOSITORY/$IMAGE_NAME
         ports:
         - containerPort: 80
       imagePullSecrets:
