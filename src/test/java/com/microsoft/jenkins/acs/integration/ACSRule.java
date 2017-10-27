@@ -85,7 +85,7 @@ public class ACSRule implements TestRule, MethodRule {
         resourceName = loadProperty("ACS_TEST_RESOURCE_NAME", "acs-test-" + generateRandomString(10));
         this.containerServiceType = containerServiceType;
 
-        useExisting = Boolean.parseBoolean(loadProperty("ACS_TEST_USE_EXISTING", "false"));
+        useExisting = Boolean.parseBoolean(loadProperty("ACS_TEST_USE_EXISTING", "true"));
         adminUser = loadProperty("ACS_TEST_ADMIN_USER", "azureuser");
         privateKeyPath = loadProperty("ACS_TEST_PRIVATE_KEY_PATH", new File(System.getProperty("user.home"), ".ssh/id_rsa").getAbsolutePath());
     }
@@ -125,10 +125,10 @@ public class ACSRule implements TestRule, MethodRule {
 
     private SSHUserPrivateKey buildSSHKey(String user, String privateKey) {
         SSHUserPrivateKey key = mock(SSHUserPrivateKey.class);
-        when(sshCredentials.getUsername()).thenReturn(user);
-        when(sshCredentials.getPrivateKey()).thenReturn(privateKey);
-        when(sshCredentials.getPrivateKeys()).thenReturn(Collections.singletonList(privateKey));
-        when(sshCredentials.getPassphrase()).thenReturn(null);
+        when(key.getUsername()).thenReturn(user);
+        when(key.getPrivateKey()).thenReturn(privateKey);
+        when(key.getPrivateKeys()).thenReturn(Collections.singletonList(privateKey));
+        when(key.getPassphrase()).thenReturn(null);
         return key;
     }
 

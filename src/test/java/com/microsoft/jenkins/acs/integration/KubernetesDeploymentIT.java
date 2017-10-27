@@ -14,6 +14,7 @@ import com.microsoft.jenkins.azurecommons.JobContext;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
+import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.model.Job;
@@ -21,9 +22,17 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
+import org.apache.commons.codec.Charsets;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryToken;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -31,6 +40,11 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.net.URL;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.microsoft.jenkins.acs.integration.TestHelpers.generateRandomString;
 import static com.microsoft.jenkins.acs.integration.TestHelpers.loadFile;
@@ -41,6 +55,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class KubernetesDeploymentIT extends IntegrationTest {
+    private static final Logger LOGGER = Logger.getLogger(KubernetesDeploymentIT.class.getName());
+
     /**
      * The rule to create the resource group and ACS cluster before the test and delete them afterwards.
      * <p>
@@ -93,6 +109,7 @@ public class KubernetesDeploymentIT extends IntegrationTest {
     }
 
     @Test
+    @Ignore
     public void combinedResourceDeployment() throws Exception {
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/combined-resource.yml");
 
@@ -103,6 +120,7 @@ public class KubernetesDeploymentIT extends IntegrationTest {
     }
 
     @Test
+    @Ignore
     public void separeteResourceDeployment() throws Exception {
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/separated-deployment.yml");
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/separated-service.yml");
@@ -113,6 +131,7 @@ public class KubernetesDeploymentIT extends IntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testVariableSubstitute() throws Exception {
         when(commandData.isEnableConfigSubstitution()).thenReturn(true);
         envVars.put("DEPLOYMENT_NAME", "substitute-vars-deployment");
@@ -130,9 +149,65 @@ public class KubernetesDeploymentIT extends IntegrationTest {
         Assert.assertEquals("substitute-nginx", deployment.getMetadata().getLabels().get("app"));
     }
 
+    /**
+     * Tests for the image pulling from private repositories.
+     * <p>
+     * To run this test,
+     * 1. prepare a private docker registry
+     * 2. push an image named acs-test-private to the registry
+     * 3. set the environment variables / system properties as advised in TestEnvironment.
+     */
     @Test
     public void testDockerCredentials() throws Exception {
+        if (StringUtils.isBlank(testEnv.dockerUsername)) {
+            return;
+        }
 
+        loadFile(KubernetesDeploymentIT.class, workspace, "k8s/private-repository.yml");
+
+        DockerRegistryToken token = new DockerRegistryToken(testEnv.dockerUsername,
+                Base64.encodeBase64String((testEnv.dockerUsername + ":" + testEnv.dockerPassword).getBytes(Charsets.UTF_8)));
+        String registry = StringUtils.isBlank(testEnv.dockerRegistry) ? "https://index.docker.io/v1/" : testEnv.dockerRegistry;
+        testEnv.dockerCredentials.add(new ResolvedDockerRegistryEndpoint(new URL(registry), token));
+
+        when(commandData.isEnableConfigSubstitution()).thenReturn(true);
+        envVars.put("ACS_TEST_DOCKER_REPOSITORY", testEnv.dockerRepository);
+
+        KubernetesClient client = buildKubernetesClient();
+        final CountDownLatch latch = new CountDownLatch(1);
+        Watch deploymentWatch =
+                client.extensions()
+                        .deployments()
+                        .inNamespace("default")
+                        .withName("private-repository")
+                        .watch(new Watcher<Deployment>() {
+                            @Override
+                            public void eventReceived(Action action, Deployment resource) {
+                                Integer availableReplica = resource.getStatus().getAvailableReplicas();
+                                if (availableReplica != null && availableReplica > 0) {
+                                    latch.countDown();
+                                }
+                            }
+
+                            @Override
+                            public void onClose(KubernetesClientException cause) {
+                                if (cause != null) {
+                                    LOGGER.log(Level.SEVERE, null, cause);
+                                }
+                            }
+                        });
+
+        new KubernetesDeploymentCommand().execute(commandData);
+        verify(commandData).setCommandState(CommandState.Success);
+        verify(commandData, never()).logError(any(Exception.class));
+
+        if (!latch.await(5, TimeUnit.MINUTES)) {
+            deploymentWatch.close();
+            Assert.fail("Timeout while waiting for the deployment to become available");
+        } else {
+            // succeeded
+            deploymentWatch.close();
+        }
     }
 
     private KubernetesClient buildKubernetesClient() throws Exception {

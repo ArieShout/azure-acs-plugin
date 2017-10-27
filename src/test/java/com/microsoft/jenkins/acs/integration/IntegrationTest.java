@@ -7,10 +7,6 @@
 package com.microsoft.jenkins.acs.integration;
 
 import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
-import org.apache.commons.codec.Charsets;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryToken;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -18,7 +14,6 @@ import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -58,24 +53,18 @@ public abstract class IntegrationTest {
 
         protected TestEnvironment() throws MalformedURLException {
             // this will be used for the private docker image pulling test
-            // apart from the settings here, we need to prepare an image on the repository first
+            // apart from the settings here, we need to prepare a private repository as well as an image
             // RUN:
             //     docker login $ACS_TEST_DOCKER_REGISTRY
             //     docker pull nginx
-            //     docker tag nginx:latest $ACS_TEST_DOCKER_REPOSITORY/acs-test-nginx
-            //     docker push $ACS_TEST_DOCKER_REPOSITORY/acs-test-nginx
+            //     docker tag nginx:latest $ACS_TEST_DOCKER_REPOSITORY/acs-test-private
+            //     docker push $ACS_TEST_DOCKER_REPOSITORY/acs-test-private
             dockerRegistry = loadProperty("ACS_TEST_DOCKER_REGISTRY", "");
             dockerUsername = loadProperty("ACS_TEST_DOCKER_USERNAME", "");
             dockerPassword = loadProperty("ACS_TEST_DOCKER_PASSWORD", "");
             dockerRepository = loadProperty("ACS_TEST_DOCKER_REPOSITORY", "");
 
             dockerCredentials = new ArrayList<>();
-            if (StringUtils.isNotBlank(dockerUsername) && StringUtils.isNotEmpty(dockerPassword)) {
-                DockerRegistryToken token = new DockerRegistryToken(dockerUsername,
-                        Base64.encodeBase64String((dockerUsername + ":" + dockerPassword).getBytes(Charsets.UTF_8)));
-                String registry = StringUtils.isBlank(dockerRegistry) ? "https://index.docker.io/v1/" : dockerRegistry;
-                dockerCredentials.add(new ResolvedDockerRegistryEndpoint(new URL(registry), token));
-            }
         }
     }
 }
