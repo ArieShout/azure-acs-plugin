@@ -81,8 +81,11 @@ public class ACSRule implements TestRule, MethodRule {
         graphEndpoint = loadProperty("ACS_TEST_AZURE_GRAPH_URL", "https://graph.windows.net/");
 
         location = loadProperty("ACS_TEST_LOCATION", "SoutheastAsia");
-        resourceGroup = loadProperty("ACS_TEST_RESOURCE_GROUP", "acs-test-" + generateRandomString(10));
-        resourceName = loadProperty("ACS_TEST_RESOURCE_NAME", "acs-test-" + generateRandomString(10));
+        resourceGroup = loadProperty("ACS_TEST_RESOURCE_GROUP", "jenkins-acs-" + generateRandomString(6));
+        // ACS_TEST_KUBERNETES_NAME
+        // ACS_TEST_DCOS_NAME
+        // ACS_TEST_SWARM_NAME
+        resourceName = loadProperty("ACS_TEST_" + containerServiceType.toUpperCase() + "_NAME", "jenkins-acs-" + generateRandomString(6));
         this.containerServiceType = containerServiceType;
 
         useExisting = Boolean.parseBoolean(loadProperty("ACS_TEST_USE_EXISTING", "true"));
@@ -126,12 +129,23 @@ public class ACSRule implements TestRule, MethodRule {
     private SSHUserPrivateKey buildSSHKey(String user, String privateKey) {
         SSHUserPrivateKey key = mock(SSHUserPrivateKey.class);
         when(key.getUsername()).thenReturn(user);
-        when(key.getPrivateKey()).thenReturn(privateKey);
         when(key.getPrivateKeys()).thenReturn(Collections.singletonList(privateKey));
         when(key.getPassphrase()).thenReturn(null);
         return key;
     }
 
+    /**
+     * Provision the ACS instance for the tests in the rule's scope.
+     *
+     * Probably not a good idea to provision the ACS for each test classes as it takes a very long time for the
+     * provision process. Besides, the success return of the creation method doesn't imply the underlying container
+     * service is ready for work. We may suffer from connection issue shortly after the creation.
+     *
+     * The clean up process, when work in a successful build, clean up all the resource as expected; but when it fails,
+     * all the context of the failure will be cleared too, which is not good for diagnostic.
+     *
+     * Leave it here for future reference.
+     */
     private void provision() throws Exception {
         keyPair = new KeyPair();
         LOGGER.log(Level.INFO, "SSH Key used for test container service creation: \npublic key:\n{0}\nprivate key:\n{1}",

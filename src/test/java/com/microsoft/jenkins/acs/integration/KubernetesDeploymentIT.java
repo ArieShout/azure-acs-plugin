@@ -6,14 +6,7 @@
 
 package com.microsoft.jenkins.acs.integration;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
-import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.jenkins.acs.ACSDeploymentBuilder;
 import com.microsoft.jenkins.acs.ACSDeploymentContext;
 import com.microsoft.jenkins.acs.util.Constants;
@@ -30,14 +23,12 @@ import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -59,63 +50,22 @@ public class KubernetesDeploymentIT extends IntegrationTest {
     @ClassRule
     public static ACSRule acs = new ACSRule(ContainerServiceOchestratorTypes.KUBERNETES.toString());
 
-    private String azureCredentialsId;
-    private String sshCredentialsId;
-    private String dockerCredentialsId;
-
     private ACSDeploymentContext deploymentContext;
-
-    private void setupJenkins() {
-        AzureCredentials azureCredentials = new AzureCredentials(
-                CredentialsScope.GLOBAL,
-                azureCredentialsId = UUID.randomUUID().toString(),
-                "Azure Credentials For ACS Test",
-                acs.subscriptionId,
-                acs.clientId,
-                acs.clientSecret,
-                acs.oauth2TokenEndpoint,
-                acs.serviceManagementURL,
-                acs.authenticationEndpoint,
-                acs.resourceManagerEndpoint,
-                acs.graphEndpoint);
-        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(azureCredentials);
-
-        BasicSSHUserPrivateKey sshCredentials = new BasicSSHUserPrivateKey(
-                CredentialsScope.GLOBAL,
-                sshCredentialsId = UUID.randomUUID().toString(),
-                acs.adminUser,
-                new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(acs.keyPair.privateKey),
-                null,
-                "Azure SSH Credentials For ACS Test");
-        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(sshCredentials);
-
-        if (StringUtils.isNotBlank(testEnv.dockerUsername)) {
-            UsernamePasswordCredentials userPass = new UsernamePasswordCredentialsImpl(
-                    CredentialsScope.GLOBAL,
-                    dockerCredentialsId = UUID.randomUUID().toString(),
-                    "Docker Registry Credentials For ACS Test",
-                    testEnv.dockerUsername,
-                    testEnv.dockerPassword);
-            SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(userPass);
-        }
-    }
 
     @Before
     @Override
     public void setup() throws Exception {
         super.setup();
-
-        setupJenkins();
+        setupJenkinsCredentials(acs);
 
         deploymentContext = new ACSDeploymentContext(
                 azureCredentialsId,
                 acs.resourceGroup,
-                acs.resourceName + "| Kubernetes",
+                acs.resourceName + " | Kubernetes",
                 sshCredentialsId,
                 "k8s/*.yml");
     }
 
-    @Ignore
     @Test
     public void combinedResourceDeployment() throws Exception {
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/combined-resource.yml");
@@ -125,7 +75,6 @@ public class KubernetesDeploymentIT extends IntegrationTest {
         verify(run, never()).setResult(Result.FAILURE);
     }
 
-    @Ignore
     @Test
     public void separeteResourceDeployment() throws Exception {
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/separated-deployment.yml");
@@ -136,7 +85,6 @@ public class KubernetesDeploymentIT extends IntegrationTest {
         verify(run, never()).setResult(Result.FAILURE);
     }
 
-    @Ignore
     @Test
     public void testVariableSubstitute() throws Exception {
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/substitute.yml");

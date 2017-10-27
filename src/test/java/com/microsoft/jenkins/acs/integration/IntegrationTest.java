@@ -6,6 +6,13 @@
 
 package com.microsoft.jenkins.acs.integration;
 
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -14,6 +21,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.security.ACL;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -27,6 +35,7 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -63,6 +72,10 @@ public abstract class IntegrationTest {
 
     protected TestEnvironment testEnv = null;
 
+    protected String azureCredentialsId;
+    protected String sshCredentialsId;
+    protected String dockerCredentialsId;
+
     @Before
     public void setup() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(ACL.SYSTEM);
@@ -86,6 +99,41 @@ public abstract class IntegrationTest {
         when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
 
         testEnv = new TestEnvironment();
+    }
+
+    protected void setupJenkinsCredentials(ACSRule acs) {
+        AzureCredentials azureCredentials = new AzureCredentials(
+                CredentialsScope.GLOBAL,
+                azureCredentialsId = UUID.randomUUID().toString(),
+                "Azure Credentials For ACS Test",
+                acs.subscriptionId,
+                acs.clientId,
+                acs.clientSecret,
+                acs.oauth2TokenEndpoint,
+                acs.serviceManagementURL,
+                acs.authenticationEndpoint,
+                acs.resourceManagerEndpoint,
+                acs.graphEndpoint);
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(azureCredentials);
+
+        BasicSSHUserPrivateKey sshCredentials = new BasicSSHUserPrivateKey(
+                CredentialsScope.GLOBAL,
+                sshCredentialsId = UUID.randomUUID().toString(),
+                acs.adminUser,
+                new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(acs.keyPair.privateKey),
+                null,
+                "Azure SSH Credentials For ACS Test");
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(sshCredentials);
+
+        if (StringUtils.isNotBlank(testEnv.dockerUsername)) {
+            UsernamePasswordCredentials userPass = new UsernamePasswordCredentialsImpl(
+                    CredentialsScope.GLOBAL,
+                    dockerCredentialsId = UUID.randomUUID().toString(),
+                    "Docker Registry Credentials For ACS Test",
+                    testEnv.dockerUsername,
+                    testEnv.dockerPassword);
+            SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()).add(userPass);
+        }
     }
 
     protected static class TestEnvironment {
