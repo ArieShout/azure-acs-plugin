@@ -113,8 +113,8 @@ public class KubernetesDeploymentIT extends IntegrationTest {
      */
     @Test
     public void testDockerCredentials() throws Exception {
-        if (StringUtils.isBlank(testEnv.dockerUsername)) {
-            return;
+        if (StringUtils.isBlank(dockerCredentialsId)) {
+            Assert.fail("No docker credentials configured in environment variables");
         }
 
         loadFile(KubernetesDeploymentIT.class, workspace, "k8s/private-repository.yml");

@@ -12,6 +12,7 @@ import com.microsoft.jenkins.acs.ACSDeploymentContext;
 import hudson.model.Result;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -53,8 +54,8 @@ public class SwarmDeploymentIT extends IntegrationTest {
 
     @Test
     public void testPrivateDockerRegistry() throws Exception {
-        if (StringUtils.isBlank(testEnv.dockerUsername)) {
-            return;
+        if (StringUtils.isBlank(dockerCredentialsId)) {
+            Assert.fail("No docker credentials configured in environment variables");
         }
 
         loadFile(getClass(), workspace, "swarm/private-repository.yml");

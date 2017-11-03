@@ -69,6 +69,18 @@ while [[ $# -gt 0 ]]; do
             export ACS_TEST_ACR_NAME="$2"
             shift; shift
             ;;
+        --admin-user)
+            export ACS_TEST_ADMIN_USER="$2"
+            shift; shift
+            ;;
+        --private-key-file)
+            export ACS_TEST_PRIVATE_KEY_PATH="$2"
+            shift; shift
+            ;;
+        --public-key-file)
+            export ACS_TEST_PUBLIC_KEY_PATH="$2"
+            shift; shift
+            ;;
         --skip-clean)
             export SKIP_CLEAN=true
             shift
@@ -148,12 +160,19 @@ if [[ -z "$ACS_TEST_SWARM_NAME" ]]; then
 fi
 
 # SSH
-export ACS_TEST_ADMIN_USER=azureuser
-export ACS_TEST_PRIVATE_KEY_PATH=$(readlink -f ~/.ssh/id_rsa)
-export ACS_TEST_PUBLIC_KEY_PATH=$(readlink -f ~/.ssh/id_rsa.pub)
+if [[ -z "$ACS_TEST_ADMIN_USER" ]]; then
+    export ACS_TEST_ADMIN_USER=azureuser
+fi
+if [[ -z "$ACS_TEST_PRIVATE_KEY_PATH" ]]; then
+    export ACS_TEST_PRIVATE_KEY_PATH="$(readlink -f ~/.ssh/id_rsa)"
+fi
+if [[ -z "$ACS_TEST_PUBLIC_KEY_PATH" ]]; then
+    export ACS_TEST_PUBLIC_KEY_PATH="$(readlink -f ~/.ssh/id_rsa.pub)"
+fi
 
 if [[ ! -f "$ACS_TEST_PUBLIC_KEY_PATH" ]] || [[ ! -f "$ACS_TEST_PRIVATE_KEY_PATH" ]]; then
-    echo "SSH key files are not present in ~/.ssh" >&2
+    echo "Cannot find SSH key files: '$ACS_TEST_PUBLIC_KEY_PATH', '$ACS_TEST_PRIVATE_KEY_PATH'" >&2
+    echo "Run ssh-keygen to create them" >&2
     exit -1
 fi
 
@@ -184,19 +203,19 @@ fi
 
 k8s_info=$(az acs show --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_KUBERNETES_NAME")
 if [[ -z "$k8s_info" ]]; then
-    az acs create --orchestrator-type kubernetes --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_KUBERNETES_NAME" --agent-count 2 &
+    az acs create --orchestrator-type kubernetes --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_KUBERNETES_NAME" --agent-count 2 --ssh-key-value "$ACS_TEST_PUBLIC_KEY_PATH" &
     k8s_pid=$!
 fi
 
 dcos_info=$(az acs show --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_DCOS_NAME")
 if [[ -z "$dcos_info" ]]; then
-    az acs create --orchestrator-type dcos --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_DCOS_NAME" --agent-count 2 &
+    az acs create --orchestrator-type dcos --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_DCOS_NAME" --agent-count 2 --ssh-key-value "$ACS_TEST_PUBLIC_KEY_PATH" &
     dcos_pid=$!
 fi
 
 swarm_info=$(az acs show --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_SWARM_NAME")
 if [[ -z "$swarm_info" ]]; then
-    az acs create --orchestrator-type swarm --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_SWARM_NAME" --agent-count 2 &
+    az acs create --orchestrator-type swarm --resource-group "$ACS_TEST_RESOURCE_GROUP" --name "$ACS_TEST_SWARM_NAME" --agent-count 2 --ssh-key-value "$ACS_TEST_PUBLIC_KEY_PATH" &
     swarm_pid=$!
 fi
 
