@@ -374,7 +374,7 @@ public class ACSDeploymentContext extends BaseCommandContext
 
     private static SSHUserPrivateKey getSshCredentials(String id) {
         if (StringUtils.isBlank(id)) {
-            // We don't need SSH
+            // We don't need SSH credentials in AKS deployment
             return null;
         }
         SSHUserPrivateKey creds = CredentialsMatchers.firstOrNull(
