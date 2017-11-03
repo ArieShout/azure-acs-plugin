@@ -2,7 +2,7 @@ package com.microsoft.jenkins.acs.commands;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.google.common.annotations.VisibleForTesting;
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.jenkins.acs.AzureACSPlugin;
 import com.microsoft.jenkins.acs.Messages;
 import com.microsoft.jenkins.acs.orchestrators.DeploymentConfig;
@@ -44,7 +44,7 @@ public class SwarmDeploymentCommand
         final boolean enableSubstitution = context.isEnableConfigSubstitution();
         final boolean swarmRemoveContainerFirst = context.isSwarmRemoveContainersFirst();
         final DeploymentConfig.Factory configFactory = new DeploymentConfig.Factory(context.getConfigFilePaths());
-        final ContainerServiceOchestratorTypes orchestratorType = context.getOrchestratorType();
+        final ContainerServiceOrchestratorTypes orchestratorType = context.getOrchestratorType();
 
         try {
             final List<ResolvedDockerRegistryEndpoint> registryCredentials =
@@ -158,7 +158,7 @@ public class SwarmDeploymentCommand
 
         String getConfigFilePaths();
 
-        ContainerServiceOchestratorTypes getOrchestratorType();
+        ContainerServiceOrchestratorTypes getOrchestratorType();
 
         boolean isEnableConfigSubstitution();
 

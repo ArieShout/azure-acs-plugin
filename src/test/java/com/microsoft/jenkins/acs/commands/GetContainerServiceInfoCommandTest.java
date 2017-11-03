@@ -8,7 +8,7 @@ package com.microsoft.jenkins.acs.commands;
 
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.ContainerService;
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.azure.management.compute.ContainerServices;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
 import org.junit.Before;
@@ -27,8 +27,8 @@ import static org.mockito.Mockito.when;
 public class GetContainerServiceInfoCommandTest {
     private static final String RESOURCE_GROUP_NAME = "resource-group";
     private static final String CONTAINER_SERVICE_NAME = "container-service";
-    private static final ContainerServiceOchestratorTypes ORCHESTRATOR_TYPE =
-            ContainerServiceOchestratorTypes.KUBERNETES;
+    private static final ContainerServiceOrchestratorTypes ORCHESTRATOR_TYPE =
+            ContainerServiceOrchestratorTypes.KUBERNETES;
     private static final String FQDN = "fqdn.test";
     private static final String ROOT_USER = "azureuser";
 
@@ -59,7 +59,7 @@ public class GetContainerServiceInfoCommandTest {
 
     @Test
     public void testGetAcsInfoOrchestratorTypeNotMatch() {
-        final ContainerServiceOchestratorTypes configuredType = ContainerServiceOchestratorTypes.DCOS;
+        final ContainerServiceOrchestratorTypes configuredType = ContainerServiceOrchestratorTypes.DCOS;
         assertNotEquals(ORCHESTRATOR_TYPE, configuredType);
         TaskResult result = command.getAcsInfo(azure, RESOURCE_GROUP_NAME, CONTAINER_SERVICE_NAME, configuredType, System.out);
         assertEquals(CommandState.HasError, result.getCommandState());

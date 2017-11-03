@@ -6,7 +6,7 @@
 
 package com.microsoft.jenkins.acs.commands;
 
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.jenkins.acs.Messages;
 import com.microsoft.jenkins.acs.util.Constants;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
@@ -38,11 +38,11 @@ public class DeploymentChoiceCommand
 
     @Override
     public Class nextCommand() {
-        if (ContainerServiceOchestratorTypes.KUBERNETES.toString().equals(containerServiceType)) {
+        if (ContainerServiceOrchestratorTypes.KUBERNETES.toString().equals(containerServiceType)) {
             return KubernetesDeploymentCommand.class;
-        } else if (ContainerServiceOchestratorTypes.DCOS.toString().equals(containerServiceType)) {
+        } else if (ContainerServiceOrchestratorTypes.DCOS.toString().equals(containerServiceType)) {
             return MarathonDeploymentCommand.class;
-        } else if (ContainerServiceOchestratorTypes.SWARM.toString().equals(containerServiceType)) {
+        } else if (ContainerServiceOrchestratorTypes.SWARM.toString().equals(containerServiceType)) {
             return SwarmDeploymentCommand.class;
         } else if (Constants.AKS.equals(containerServiceType)) {
             return AKSDeploymentCommand.class;

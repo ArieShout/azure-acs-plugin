@@ -23,8 +23,9 @@ import com.microsoft.azure.management.network.Protocol;
 import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.network.SecurityRuleAccess;
 import com.microsoft.azure.management.network.SecurityRuleDirection;
+import com.microsoft.azure.management.network.Subnet;
 import com.microsoft.azure.management.network.TransportProtocol;
-import com.microsoft.azure.management.resources.fluentcore.model.Creatable;
+import com.microsoft.azure.management.network.model.HasNetworkInterfaces;
 import com.microsoft.jenkins.acs.orchestrators.ServicePort;
 import com.microsoft.rest.RestException;
 import com.microsoft.rest.ServiceCallback;
@@ -432,32 +433,67 @@ public class EnablePortCommandTest {
         }
 
         @Override
-        public LoadBalancingRule.UpdateDefinitionStages.WithFrontendPort<LoadBalancer.Update> withFrontend(String frontendName) {
-            this.frontend = frontendName;
-            return this;
-        }
-
-        @Override
-        public LoadBalancingRule.UpdateDefinitionStages.WithProbe<LoadBalancer.Update> withFrontendPort(int port) {
-            this.frontendPort = port;
-            return this;
-        }
-
-        @Override
-        public LoadBalancingRule.UpdateDefinitionStages.WithBackend<LoadBalancer.Update> withProbe(String name) {
-            this.probe = name;
-            return this;
-        }
-
-        @Override
-        public LoadBalancingRule.UpdateDefinitionStages.WithBackendPort<LoadBalancer.Update> withBackend(String backendName) {
+        public LoadBalancingRule.UpdateDefinitionStages.WithBackendPort<LoadBalancer.Update> toBackend(String backendName) {
             this.backend = backendName;
             return this;
         }
 
         @Override
-        public LoadBalancingRule.UpdateDefinitionStages.WithAttach<LoadBalancer.Update> withBackendPort(int port) {
+        public LoadBalancingRule.UpdateDefinitionStages.WithAttach<LoadBalancer.Update> withProbe(String name) {
+            this.probe = name;
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithBackendPort<LoadBalancer.Update> toExistingVirtualMachines(HasNetworkInterfaces... vms) {
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithBackendPort<LoadBalancer.Update> toExistingVirtualMachines(Collection<HasNetworkInterfaces> vms) {
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithAttach<LoadBalancer.Update> toBackendPort(int port) {
             this.backendPort = port;
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithFrontendPort<LoadBalancer.Update> fromFrontend(String frontendName) {
+            this.frontend = frontendName;
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithFrontendPort<LoadBalancer.Update> fromExistingPublicIPAddress(PublicIPAddress publicIPAddress) {
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithFrontendPort<LoadBalancer.Update> fromExistingPublicIPAddress(String resourceId) {
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithFrontendPort<LoadBalancer.Update> fromExistingSubnet(Network network, String subnetName) {
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithFrontendPort<LoadBalancer.Update> fromExistingSubnet(String networkResourceId, String subnetName) {
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithFrontendPort<LoadBalancer.Update> fromExistingSubnet(Subnet subnet) {
+            return this;
+        }
+
+        @Override
+        public LoadBalancingRule.UpdateDefinitionStages.WithBackend<LoadBalancer.Update> fromFrontendPort(int port) {
+            this.frontendPort = port;
             return this;
         }
 
@@ -565,12 +601,6 @@ public class EnablePortCommandTest {
         }
 
         @Override
-        public LoadBalancerPrivateFrontend.Update updateInternalFrontend(String name) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
         public LoadBalancerPublicFrontend.UpdateDefinitionStages.Blank<LoadBalancer.Update> definePublicFrontend(String name) {
             Assert.fail("Should not reach");
             return null;
@@ -583,19 +613,13 @@ public class EnablePortCommandTest {
         }
 
         @Override
-        public LoadBalancerPublicFrontend.Update updateInternetFrontend(String name) {
+        public LoadBalancerPrivateFrontend.Update updatePrivateFrontend(String name) {
             Assert.fail("Should not reach");
             return null;
         }
 
         @Override
-        public LoadBalancer.Update withLoadBalancingRule(int frontendPort, TransportProtocol protocol, int backendPort) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withLoadBalancingRule(int port, TransportProtocol protocol) {
+        public LoadBalancerPublicFrontend.Update updatePublicFrontend(String name) {
             Assert.fail("Should not reach");
             return null;
         }
@@ -613,24 +637,6 @@ public class EnablePortCommandTest {
 
         @Override
         public LoadBalancingRule.Update updateLoadBalancingRule(String name) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withFrontendSubnet(Network network, String subnetName) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withTcpProbe(int port) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withHttpProbe(String requestPath) {
             Assert.fail("Should not reach");
             return null;
         }
@@ -660,36 +666,6 @@ public class EnablePortCommandTest {
 
         @Override
         public LoadBalancerHttpProbe.Update updateHttpProbe(String name) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withExistingPublicIPAddress(PublicIPAddress publicIPAddress) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withExistingPublicIPAddress(String resourceId) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withNewPublicIPAddress(String leafDnsLabel) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withNewPublicIPAddress(Creatable<PublicIPAddress> creatable) {
-            Assert.fail("Should not reach");
-            return null;
-        }
-
-        @Override
-        public LoadBalancer.Update withNewPublicIPAddress() {
             Assert.fail("Should not reach");
             return null;
         }

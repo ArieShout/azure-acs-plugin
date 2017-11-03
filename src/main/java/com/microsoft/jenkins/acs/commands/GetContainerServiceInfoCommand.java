@@ -9,7 +9,7 @@ package com.microsoft.jenkins.acs.commands;
 import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.ContainerService;
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.jenkins.acs.AzureACSPlugin;
 import com.microsoft.jenkins.acs.Messages;
@@ -42,7 +42,7 @@ public class GetContainerServiceInfoCommand
         final String resourceGroupName = context.getResourceGroupName();
         final String containerServiceName = context.getContainerServiceName();
         final String containerServiceType = context.getContainerServiceType();
-        final ContainerServiceOchestratorTypes configuredType = context.getOrchestratorType();
+        final ContainerServiceOrchestratorTypes configuredType = context.getOrchestratorType();
 
         final String aiType = AzureACSPlugin.normalizeContainerSerivceType(containerServiceType);
 
@@ -94,7 +94,7 @@ public class GetContainerServiceInfoCommand
             Azure azureClient,
             String resourceGroupName,
             String containerServiceName,
-            ContainerServiceOchestratorTypes configuredType,
+            ContainerServiceOrchestratorTypes configuredType,
             PrintStream logger) {
         TaskResult result = new TaskResult();
 
@@ -110,7 +110,7 @@ public class GetContainerServiceInfoCommand
             return result;
         }
 
-        ContainerServiceOchestratorTypes orchestratorType = containerService.orchestratorType();
+        ContainerServiceOrchestratorTypes orchestratorType = containerService.orchestratorType();
         logger.println(Messages.GetContainserServiceInfoCommand_orchestratorType(orchestratorType));
         result.orchestratorType = orchestratorType;
 
@@ -139,7 +139,7 @@ public class GetContainerServiceInfoCommand
         private static final long serialVersionUID = 1L;
 
         private CommandState commandState = CommandState.Unknown;
-        private ContainerServiceOchestratorTypes orchestratorType;
+        private ContainerServiceOrchestratorTypes orchestratorType;
         private String fqdn;
         private String adminUsername;
 
@@ -147,7 +147,7 @@ public class GetContainerServiceInfoCommand
             return commandState;
         }
 
-        public ContainerServiceOchestratorTypes getOrchestratorType() {
+        public ContainerServiceOrchestratorTypes getOrchestratorType() {
             return orchestratorType;
         }
 
@@ -169,7 +169,7 @@ public class GetContainerServiceInfoCommand
 
         void setMgmtFQDN(String mgmtFQDN);
 
-        ContainerServiceOchestratorTypes getOrchestratorType();
+        ContainerServiceOrchestratorTypes getOrchestratorType();
 
         String getContainerServiceType();
     }

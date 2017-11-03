@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableSet;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.ContainerService;
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.azure.management.resources.GenericResource;
 import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.util.AzureCredentials;
@@ -94,7 +94,7 @@ public class ACSDeploymentContext extends BaseCommandContext
     private List<DockerRegistryEndpoint> containerRegistryCredentials;
 
     private transient String mgmtFQDN;
-    private transient ContainerServiceOchestratorTypes orchestratorType;
+    private transient ContainerServiceOrchestratorTypes orchestratorType;
     private transient SSHUserPrivateKey sshCredentials;
 
     @DataBoundConstructor
@@ -206,9 +206,9 @@ public class ACSDeploymentContext extends BaseCommandContext
      * @return the container service's orchestrator type configured for the build
      */
     @Override
-    public ContainerServiceOchestratorTypes getOrchestratorType() {
+    public ContainerServiceOrchestratorTypes getOrchestratorType() {
         if (orchestratorType == null) {
-            orchestratorType = ContainerServiceOchestratorTypes.fromString(getOrchestratorType(containerService));
+            orchestratorType = ContainerServiceOrchestratorTypes.fromString(getOrchestratorType(containerService));
         }
 
         return orchestratorType;
@@ -472,8 +472,8 @@ public class ACSDeploymentContext extends BaseCommandContext
                 return Messages.ACSDeploymentContext_missingSSHCredentials();
             }
 
-            ContainerServiceOchestratorTypes orchestratorType =
-                    ContainerServiceOchestratorTypes.fromString(orchestratorTypeName);
+            ContainerServiceOrchestratorTypes orchestratorType =
+                    ContainerServiceOrchestratorTypes.fromString(orchestratorTypeName);
 
             if (!Constants.SUPPORTED_ORCHESTRATOR.contains(orchestratorType)) {
                 return Messages.ACSDeploymentContext_orchestratorNotSupported(orchestratorTypeName);
@@ -486,6 +486,11 @@ public class ACSDeploymentContext extends BaseCommandContext
 
     @Extension
     public static final class DescriptorImpl extends StepDescriptor {
+        public DescriptorImpl() {
+            super();
+            load();
+        }
+
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
             StandardListBoxModel model = new StandardListBoxModel();
             model.add(Messages.ACSDeploymentContext_selectAzureCredentials(), Constants.INVALID_OPTION);
@@ -621,7 +626,7 @@ public class ACSDeploymentContext extends BaseCommandContext
                 PagedList<ContainerService> containerServices =
                         azureClient.containerServices().listByResourceGroup(resourceGroupName);
                 for (ContainerService containerService : containerServices) {
-                    ContainerServiceOchestratorTypes orchestratorType = containerService.orchestratorType();
+                    ContainerServiceOrchestratorTypes orchestratorType = containerService.orchestratorType();
                     if (Constants.SUPPORTED_ORCHESTRATOR.contains(orchestratorType)) {
                         String value = String.format("%s | %s",
                                 containerService.name(), containerService.orchestratorType());
@@ -673,14 +678,14 @@ public class ACSDeploymentContext extends BaseCommandContext
                 return FormValidation.ok();
             }
 
-            ContainerServiceOchestratorTypes orchestratorType;
+            ContainerServiceOrchestratorTypes orchestratorType;
             try {
-                orchestratorType = ContainerServiceOchestratorTypes.fromString(getOrchestratorType(containerService));
+                orchestratorType = ContainerServiceOrchestratorTypes.fromString(getOrchestratorType(containerService));
             } catch (IllegalArgumentException e) {
                 // orchestrator type not determined, skip check
                 return FormValidation.ok();
             }
-            if (orchestratorType != ContainerServiceOchestratorTypes.KUBERNETES) {
+            if (orchestratorType != ContainerServiceOrchestratorTypes.KUBERNETES) {
                 return FormValidation.ok();
             }
 
@@ -708,14 +713,14 @@ public class ACSDeploymentContext extends BaseCommandContext
                 return FormValidation.ok();
             }
 
-            ContainerServiceOchestratorTypes orchestratorType;
+            ContainerServiceOrchestratorTypes orchestratorType;
             try {
-                orchestratorType = ContainerServiceOchestratorTypes.fromString(getOrchestratorType(containerService));
+                orchestratorType = ContainerServiceOrchestratorTypes.fromString(getOrchestratorType(containerService));
             } catch (IllegalArgumentException e) {
                 // orchestrator type not determined, skip check
                 return FormValidation.ok();
             }
-            if (orchestratorType != ContainerServiceOchestratorTypes.DCOS) {
+            if (orchestratorType != ContainerServiceOrchestratorTypes.DCOS) {
                 return FormValidation.ok();
             }
 

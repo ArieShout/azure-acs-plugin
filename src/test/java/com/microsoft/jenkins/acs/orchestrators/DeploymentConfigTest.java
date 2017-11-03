@@ -6,7 +6,7 @@
 
 package com.microsoft.jenkins.acs.orchestrators;
 
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import hudson.EnvVars;
 import hudson.FilePath;
 import org.junit.Test;
@@ -27,7 +27,7 @@ public class DeploymentConfigTest {
         when(workspace.list(any(String.class))).thenReturn(new FilePath[0]);
 
         try {
-            new DeploymentConfig.Factory("some-path").build(ContainerServiceOchestratorTypes.KUBERNETES, workspace, new EnvVars());
+            new DeploymentConfig.Factory("some-path").build(ContainerServiceOrchestratorTypes.KUBERNETES, workspace, new EnvVars());
             fail("Should fail if no config file was found");
         } catch (IllegalArgumentException ex) {
             // expected
@@ -41,15 +41,15 @@ public class DeploymentConfigTest {
         when(workspace.list(any(String.class))).thenReturn(configFiles);
 
         DeploymentConfig.Factory factory = new DeploymentConfig.Factory("some-path");
-        DeploymentConfig dcos = factory.build(ContainerServiceOchestratorTypes.DCOS, workspace, new EnvVars());
+        DeploymentConfig dcos = factory.build(ContainerServiceOrchestratorTypes.DCOS, workspace, new EnvVars());
         assertTrue(dcos instanceof MarathonDeploymentConfig);
-        DeploymentConfig k8s = factory.build(ContainerServiceOchestratorTypes.KUBERNETES, workspace, new EnvVars());
+        DeploymentConfig k8s = factory.build(ContainerServiceOrchestratorTypes.KUBERNETES, workspace, new EnvVars());
         assertTrue(k8s instanceof KubernetesDeploymentConfig);
-        DeploymentConfig swarm = factory.build(ContainerServiceOchestratorTypes.SWARM, workspace, new EnvVars());
+        DeploymentConfig swarm = factory.build(ContainerServiceOrchestratorTypes.SWARM, workspace, new EnvVars());
         assertTrue(swarm instanceof SwarmDeploymentConfig);
 
         try {
-            factory.build(ContainerServiceOchestratorTypes.CUSTOM, workspace, new EnvVars());
+            factory.build(ContainerServiceOrchestratorTypes.CUSTOM, workspace, new EnvVars());
             fail("Should fail on unsupported CUSTOM orchestrator type");
         } catch (IllegalArgumentException ex) {
             // expected

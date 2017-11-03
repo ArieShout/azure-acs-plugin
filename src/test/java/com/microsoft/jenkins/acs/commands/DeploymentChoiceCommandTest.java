@@ -6,7 +6,7 @@
 
 package com.microsoft.jenkins.acs.commands;
 
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.jenkins.acs.ACSDeploymentContext;
 import com.microsoft.jenkins.acs.util.Constants;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
@@ -37,7 +37,7 @@ public class DeploymentChoiceCommandTest {
     @Test
     public void testNotSupportedType() {
         DeploymentChoiceCommand.IDeploymentChoiceCommandData context = prepareContext(
-                ContainerServiceOchestratorTypes.CUSTOM.toString());
+                ContainerServiceOrchestratorTypes.CUSTOM.toString());
         new DeploymentChoiceCommand().execute(context);
 
         verify(context, times(1)).setCommandState(CommandState.HasError);
@@ -45,17 +45,17 @@ public class DeploymentChoiceCommandTest {
 
     @Test
     public void testKubernetes() {
-        testChoiceForType(ContainerServiceOchestratorTypes.KUBERNETES.toString(), KubernetesDeploymentCommand.class);
+        testChoiceForType(ContainerServiceOrchestratorTypes.KUBERNETES.toString(), KubernetesDeploymentCommand.class);
     }
 
     @Test
     public void testDcos() {
-        testChoiceForType(ContainerServiceOchestratorTypes.DCOS.toString(), MarathonDeploymentCommand.class);
+        testChoiceForType(ContainerServiceOrchestratorTypes.DCOS.toString(), MarathonDeploymentCommand.class);
     }
 
     @Test
     public void testSwarm() {
-        testChoiceForType(ContainerServiceOchestratorTypes.SWARM.toString(), SwarmDeploymentCommand.class);
+        testChoiceForType(ContainerServiceOrchestratorTypes.SWARM.toString(), SwarmDeploymentCommand.class);
     }
 
     @Test

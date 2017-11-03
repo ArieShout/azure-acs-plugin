@@ -7,7 +7,7 @@
 package com.microsoft.jenkins.acs.commands;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.jenkins.acs.AzureACSPlugin;
 import com.microsoft.jenkins.acs.Messages;
 import com.microsoft.jenkins.acs.orchestrators.DeploymentConfig;
@@ -133,7 +133,7 @@ public abstract class KubernetesDeploymentCommandBase<
     static class KubernetesDeployWorker extends MasterToSlaveCallable<TaskResult, Exception> {
         private TaskListener taskListener;
         private DeploymentConfig.Factory configFactory;
-        private ContainerServiceOchestratorTypes orchestratorType;
+        private ContainerServiceOrchestratorTypes orchestratorType;
         private FilePath workspace;
         private EnvVars envVars;
         private String managementFqdn;
@@ -246,11 +246,11 @@ public abstract class KubernetesDeploymentCommandBase<
             this.configFactory = configFactory;
         }
 
-        public ContainerServiceOchestratorTypes getOrchestratorType() {
+        public ContainerServiceOrchestratorTypes getOrchestratorType() {
             return orchestratorType;
         }
 
-        public void setOrchestratorType(ContainerServiceOchestratorTypes orchestratorType) {
+        public void setOrchestratorType(ContainerServiceOrchestratorTypes orchestratorType) {
             this.orchestratorType = orchestratorType;
         }
 
@@ -336,7 +336,7 @@ public abstract class KubernetesDeploymentCommandBase<
 
         String getConfigFilePaths();
 
-        ContainerServiceOchestratorTypes getOrchestratorType();
+        ContainerServiceOrchestratorTypes getOrchestratorType();
 
         String getContainerServiceType();
 

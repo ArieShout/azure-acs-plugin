@@ -9,7 +9,7 @@ package com.microsoft.jenkins.acs.commands;
 import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.azure.management.network.LoadBalancer;
 import com.microsoft.azure.management.network.LoadBalancerBackend;
 import com.microsoft.azure.management.network.LoadBalancerFrontend;
@@ -61,7 +61,7 @@ public class EnablePortCommand implements ICommand<EnablePortCommand.IEnablePort
         final TaskListener taskListener = jobContext.getTaskListener();
         final EnvVars envVars = context.getEnvVars();
         final DeploymentConfig.Factory configFactory = new DeploymentConfig.Factory(context.getConfigFilePaths());
-        final ContainerServiceOchestratorTypes orchestratorType = context.getOrchestratorType();
+        final ContainerServiceOrchestratorTypes orchestratorType = context.getOrchestratorType();
         String azureCredentialsId = context.getAzureCredentialsId();
         final AzureCredentials.ServicePrincipal servicePrincipal =
                 AzureCredentials.getServicePrincipal(azureCredentialsId);
@@ -292,11 +292,11 @@ public class EnablePortCommand implements ICommand<EnablePortCommand.IEnablePort
                         .attach()
                         .defineLoadBalancingRule(ruleName)
                         .withProtocol(servicePort.getTransportProtocol())
-                        .withFrontend(frontend.name())
-                        .withFrontendPort(servicePort.getHostPort())
+                        .fromFrontend(frontend.name())
+                        .fromFrontendPort(servicePort.getHostPort())
+                        .toBackend(backend.name())
+                        .toBackendPort(servicePort.getHostPort())
                         .withProbe(probeName)
-                        .withBackend(backend.name())
-                        .withBackendPort(servicePort.getHostPort())
                         .withIdleTimeoutInMinutes(LOAD_BALANCER_IDLE_TIMEOUT_IN_MINUTES)
                         .withLoadDistribution(LoadDistribution.DEFAULT)
                         .attach();
@@ -314,6 +314,6 @@ public class EnablePortCommand implements ICommand<EnablePortCommand.IEnablePort
 
         String getResourceGroupName();
 
-        ContainerServiceOchestratorTypes getOrchestratorType();
+        ContainerServiceOrchestratorTypes getOrchestratorType();
     }
 }

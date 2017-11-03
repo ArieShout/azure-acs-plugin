@@ -1,6 +1,6 @@
 package com.microsoft.jenkins.acs.orchestrators;
 
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.jenkins.acs.Messages;
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -47,7 +47,7 @@ public abstract class DeploymentConfig implements Serializable {
             this.configFilePaths = configFilePaths;
         }
 
-        public DeploymentConfig build(ContainerServiceOchestratorTypes type,
+        public DeploymentConfig build(ContainerServiceOrchestratorTypes type,
                                       FilePath workspace,
                                       EnvVars envVars) throws IOException, InterruptedException {
             final String expandedConfigFilePaths = envVars.expand(configFilePaths);

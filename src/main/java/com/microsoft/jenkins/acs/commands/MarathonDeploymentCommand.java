@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.jcraft.jsch.JSchException;
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 import com.microsoft.jenkins.acs.AzureACSPlugin;
 import com.microsoft.jenkins.acs.Messages;
 import com.microsoft.jenkins.acs.orchestrators.DeploymentConfig;
@@ -68,7 +68,7 @@ public class MarathonDeploymentCommand
         final String credentialsDirectoryName = nameForBuild(jobContext);
         final DeploymentConfig.Factory deploymentConfigFactory =
                 new DeploymentConfig.Factory(context.getConfigFilePaths());
-        final ContainerServiceOchestratorTypes orchestratorType = context.getOrchestratorType();
+        final ContainerServiceOrchestratorTypes orchestratorType = context.getOrchestratorType();
 
         try {
             final List<ResolvedDockerRegistryEndpoint> dockerCredentials =
@@ -318,7 +318,7 @@ public class MarathonDeploymentCommand
 
         String getConfigFilePaths();
 
-        ContainerServiceOchestratorTypes getOrchestratorType();
+        ContainerServiceOrchestratorTypes getOrchestratorType();
 
         boolean isEnableConfigSubstitution();
 

@@ -6,7 +6,7 @@
 
 package com.microsoft.jenkins.acs.util;
 
-import com.microsoft.azure.management.compute.ContainerServiceOchestratorTypes;
+import com.microsoft.azure.management.compute.ContainerServiceOrchestratorTypes;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -68,16 +68,16 @@ public final class Constants {
 
     public static final String MARATHON_DOCKER_CFG_ARCHIVE_URI = "MARATHON_DOCKER_CFG_ARCHIVE_URI";
 
-    public static final Set<ContainerServiceOchestratorTypes> SUPPORTED_ORCHESTRATOR = new HashSet<>(Arrays.asList(
-            ContainerServiceOchestratorTypes.KUBERNETES,
-            ContainerServiceOchestratorTypes.DCOS,
-            ContainerServiceOchestratorTypes.SWARM
+    public static final Set<ContainerServiceOrchestratorTypes> SUPPORTED_ORCHESTRATOR = new HashSet<>(Arrays.asList(
+            ContainerServiceOrchestratorTypes.KUBERNETES,
+            ContainerServiceOrchestratorTypes.DCOS,
+            ContainerServiceOrchestratorTypes.SWARM
     ));
 
     public static final Set<String> SUPPORTED_ORCHESTRATOR_NAMES = new HashSet<>(Arrays.asList(
-            ContainerServiceOchestratorTypes.KUBERNETES.toString(),
-            ContainerServiceOchestratorTypes.DCOS.toString(),
-            ContainerServiceOchestratorTypes.SWARM.toString()
+            ContainerServiceOrchestratorTypes.KUBERNETES.toString(),
+            ContainerServiceOrchestratorTypes.DCOS.toString(),
+            ContainerServiceOrchestratorTypes.SWARM.toString()
     ));
 
     public static final String AKS = "AKS";
@@ -107,7 +107,7 @@ public final class Constants {
     public static final String AI_FQDN = "FQDN";
     public static final String AI_RESOURCE_NAME = "ResourceName";
 
-    public static int sshPort(ContainerServiceOchestratorTypes type) {
+    public static int sshPort(ContainerServiceOrchestratorTypes type) {
         switch (type) {
             case DCOS:
                 return DCOS_SSH_PORT;
